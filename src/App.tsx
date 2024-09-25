@@ -1,7 +1,10 @@
+// src/App.tsx
+import React from "react";
+import CanvasComponent from "../src/components/canvas";
 import Landing from "./components/landing";
 
-function App() {
+const App: React.FC = () => {
   return <Landing />;
-}
+};
 
 export default App;

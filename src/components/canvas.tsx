@@ -1,103 +1,93 @@
-import React, { useRef, useState, useEffect } from "react";
+// src/CanvasComponent.tsx
+import React, { useRef, useEffect } from "react";
 
-const DualCanvas = () => {
-  const originalCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const syncedCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
+const CanvasComponent: React.FC = () => {
+  const canvasRef1 = useRef<HTMLCanvasElement | null>(null);
+  const canvasRef2 = useRef<HTMLCanvasElement | null>(null);
+  const ctx1 = useRef<CanvasRenderingContext2D | null>(null);
+  const ctx2 = useRef<CanvasRenderingContext2D | null>(null);
 
   useEffect(() => {
-    if (originalCanvasRef.current) {
-      const ctx = originalCanvasRef.current.getContext("2d");
-      if (ctx) {
-        ctx.lineCap = "round";
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 1;
-        setContext(ctx);
-      }
+    const canvas1 = canvasRef1.current;
+    const canvas2 = canvasRef2.current;
+    if (canvas1 && canvas2) {
+      ctx1.current = canvas1.getContext("2d");
+      ctx2.current = canvas2.getContext("2d");
+      //   canvas1.width = window.innerWidth / 2;
+      //   canvas1.height = window.innerHeight;
+      //   canvas2.width = window.innerWidth / 2;
+      //   canvas2.height = window.innerHeight;
     }
   }, []);
 
-  const drawing = (e: React.MouseEvent) => {
-    if (context) {
-      context.beginPath();
-      context.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-      setIsDrawing(true);
-    }
+  const sendDrawData = (data: any) => {
+    // Replace with your WebRTC signaling code
+    // For demonstration, we are just calling the draw function directly
+    drawOnCanvas2(data);
   };
 
-  const draw = (e: React.MouseEvent) => {
-    if (!isDrawing || !context) return;
+  const drawOnCanvas1 = (event: MouseEvent) => {
+    const x = event.clientX - canvasRef1.current!.getBoundingClientRect().left;
+    const y = event.clientY - canvasRef1.current!.getBoundingClientRect().top;
+    ctx1.current?.lineTo(x, y);
+    ctx1.current?.stroke();
 
-    context.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-    context.stroke();
+    // Send draw data to the other canvas
+    sendDrawData({ x, y });
+  };
 
-    if (syncedCanvasRef.current) {
-      const syncedCtx = syncedCanvasRef.current.getContext("2d");
-      if (syncedCtx) {
-        syncedCtx.strokeStyle = context.strokeStyle;
-        syncedCtx.lineWidth = context.lineWidth;
-        syncedCtx.lineCap = context.lineCap;
-        syncedCtx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-        syncedCtx.stroke();
-      }
+  const drawOnCanvas2 = (data: { x: number; y: number }) => {
+    ctx2.current?.lineTo(data.x, data.y);
+    ctx2.current?.stroke();
+  };
+
+  const startDrawing = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef1.current;
+    if (canvas) {
+      ctx1.current?.beginPath();
+      drawOnCanvas1(event.nativeEvent);
+      canvas.addEventListener("mousemove", drawOnCanvas1);
     }
   };
 
   const stopDrawing = () => {
-    if (context) {
-      context.closePath();
-      setIsDrawing(false);
+    const canvas = canvasRef1.current;
+    if (canvas) {
+      canvas.removeEventListener("mousemove", drawOnCanvas1);
+      ctx1.current?.closePath();
     }
   };
 
-  const handleReset = () => {
-    if (originalCanvasRef.current && syncedCanvasRef.current) {
-      const originalCtx = originalCanvasRef.current.getContext("2d");
-      const syncedCtx = syncedCanvasRef.current.getContext("2d");
-
-      if (originalCtx) {
-        originalCtx.clearRect(
-          0,
-          0,
-          originalCanvasRef.current.width,
-          originalCanvasRef.current.height
-        );
-      }
-
-      if (syncedCtx) {
-        syncedCtx.clearRect(
-          0,
-          0,
-          syncedCanvasRef.current.width,
-          syncedCanvasRef.current.height
-        );
-      }
+  const resetCanvases = () => {
+    const canvas1 = canvasRef1.current;
+    const canvas2 = canvasRef2.current;
+    if (ctx1.current && ctx2.current && canvas1 && canvas2) {
+      ctx1.current.clearRect(0, 0, canvas1.width, canvas1.height);
+      ctx2.current.clearRect(0, 0, canvas2.width, canvas2.height);
     }
   };
 
   return (
-    <div className="flex gap-4 flex-col items-center">
+    <div className="flex flex-col items-center">
       <canvas
-        ref={originalCanvasRef}
-        onMouseDown={drawing}
-        onMouseMove={draw}
+        ref={canvasRef1}
+        className="border border-gray-500 m-2 bg-white"
+        onMouseDown={startDrawing}
         onMouseUp={stopDrawing}
         onMouseLeave={stopDrawing}
-        className="border border-black rounded-lg bg-white"
-      ></canvas>
+      />
       <button
-        onClick={handleReset}
-        className="p-4 border bg-white rounded-lg w-fit"
+        onClick={resetCanvases}
+        className="bg-custom-gradient p-2 rounded-lg hover:animate-pulse hover:text-white"
       >
-        s
+        Reset
       </button>
       <canvas
-        ref={syncedCanvasRef}
-        className="border border-black rounded-lg bg-white"
-      ></canvas>
+        ref={canvasRef2}
+        className="border border-gray-500 m-2 bg-white"
+      />
     </div>
   );
 };
 
-export default DualCanvas;
+export default CanvasComponent;
