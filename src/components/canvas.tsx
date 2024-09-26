@@ -1,86 +1,94 @@
 import React, { useRef, useEffect } from "react";
 
 const CanvasComponent: React.FC = () => {
-  const canvasRef1 = useRef<HTMLCanvasElement | null>(null);
-  const ctx1 = useRef<CanvasRenderingContext2D | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const ctx = useRef<CanvasRenderingContext2D | null>(null);
   const channel = useRef<BroadcastChannel | null>(null);
+  const isDrawing = useRef(false);
 
   useEffect(() => {
     channel.current = new BroadcastChannel("canvas-channel");
 
-    const canvas1 = canvasRef1.current;
-    if (canvas1) {
-      ctx1.current = canvas1.getContext("2d");
+    const canvas = canvasRef.current;
+    if (canvas) {
+      ctx.current = canvas.getContext("2d");
+      if (ctx.current) {
+        ctx.current.lineWidth = 2;
+        ctx.current.strokeStyle = "black";
+
+        channel.current.onmessage = (event) => {
+          const { x, y, isDrawing } = event.data;
+
+          if (ctx.current) {
+            if (isDrawing) {
+              ctx.current.lineTo(x, y);
+              ctx.current.stroke();
+            } else {
+              ctx.current.closePath();
+            }
+          }
+        };
+      }
     }
 
-    channel.current.onmessage = (event) => {
-      console.log("Received message:", event.data);
-      const { x, y, isDrawing } = event.data;
-      if (isDrawing) {
-        ctx1.current?.lineTo(x, y);
-        ctx1.current?.stroke();
-      } else {
-        ctx1.current?.closePath();
-      }
-    };
-
-    // Clean up function
     return () => {
       channel.current?.close();
-      channel.current = null;
     };
   }, []);
 
   const drawOnCanvas = (event: MouseEvent) => {
-    const x = event.clientX - canvasRef1.current!.getBoundingClientRect().left;
-    const y = event.clientY - canvasRef1.current!.getBoundingClientRect().top;
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
 
-    if (channel.current) {
-      channel.current.postMessage({ x, y, isDrawing: true });
+    if (ctx.current && isDrawing.current) {
+      ctx.current.lineTo(x, y);
+      ctx.current.stroke();
+      channel.current?.postMessage({ x, y, isDrawing: true });
     }
-
-    ctx1.current?.lineTo(x, y);
-    ctx1.current?.stroke();
   };
 
   const startDrawing = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef1.current;
+    const canvas = canvasRef.current;
     if (canvas) {
-      ctx1.current!.strokeStyle = "black";
-      ctx1.current!.lineWidth = 1;
-      ctx1.current?.beginPath();
+      isDrawing.current = true;
+      ctx.current?.beginPath();
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      ctx.current?.moveTo(x, y);
       drawOnCanvas(event.nativeEvent);
       canvas.addEventListener("mousemove", drawOnCanvas);
     }
   };
 
   const stopDrawing = () => {
-    const canvas = canvasRef1.current;
-    if (canvas) {
+    const canvas = canvasRef.current;
+    if (canvas && ctx.current) {
+      isDrawing.current = false;
       canvas.removeEventListener("mousemove", drawOnCanvas);
-      ctx1.current?.closePath();
-
-      if (channel.current) {
-        channel.current.postMessage({ isDrawing: false });
-      }
+      ctx.current.closePath();
+      channel.current?.postMessage({ isDrawing: false });
     }
   };
 
   const resetCanvas = () => {
-    const canvas1 = canvasRef1.current;
-    if (ctx1.current && canvas1) {
-      ctx1.current.clearRect(0, 0, canvas1.width, canvas1.height);
+    const canvas = canvasRef.current;
+    if (ctx.current && canvas) {
+      ctx.current.reset();
     }
   };
 
   return (
     <div className="flex flex-col items-center">
       <canvas
-        ref={canvasRef1}
+        ref={canvasRef}
         className="border border-gray-500 m-2 bg-white rounded-lg"
         onMouseDown={startDrawing}
         onMouseUp={stopDrawing}
         onMouseLeave={stopDrawing}
+        width={500}
+        height={500}
       />
       <button
         onClick={resetCanvas}
