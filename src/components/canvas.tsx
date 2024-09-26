@@ -2,60 +2,74 @@ import React, { useRef, useEffect } from "react";
 
 const CanvasComponent: React.FC = () => {
   const canvasRef1 = useRef<HTMLCanvasElement | null>(null);
-  const canvasRef2 = useRef<HTMLCanvasElement | null>(null);
   const ctx1 = useRef<CanvasRenderingContext2D | null>(null);
-  const ctx2 = useRef<CanvasRenderingContext2D | null>(null);
+  const channel = useRef<BroadcastChannel | null>(null);
 
   useEffect(() => {
+    channel.current = new BroadcastChannel("canvas-channel");
+
     const canvas1 = canvasRef1.current;
-    const canvas2 = canvasRef2.current;
-    if (canvas1 && canvas2) {
+    if (canvas1) {
       ctx1.current = canvas1.getContext("2d");
-      ctx2.current = canvas2.getContext("2d");
     }
+
+    channel.current.onmessage = (event) => {
+      console.log("Received message:", event.data);
+      const { x, y, isDrawing } = event.data;
+      if (isDrawing) {
+        ctx1.current?.lineTo(x, y);
+        ctx1.current?.stroke();
+      } else {
+        ctx1.current?.closePath();
+      }
+    };
+
+    // Clean up function
+    return () => {
+      channel.current?.close();
+      channel.current = null;
+    };
   }, []);
 
-  const sendDrawData = (data: any) => {
-    drawOnCanvas2(data);
-  };
-
-  const drawOnCanvas1 = (event: MouseEvent) => {
+  const drawOnCanvas = (event: MouseEvent) => {
     const x = event.clientX - canvasRef1.current!.getBoundingClientRect().left;
     const y = event.clientY - canvasRef1.current!.getBoundingClientRect().top;
+
+    if (channel.current) {
+      channel.current.postMessage({ x, y, isDrawing: true });
+    }
+
     ctx1.current?.lineTo(x, y);
     ctx1.current?.stroke();
-
-    sendDrawData({ x, y });
-  };
-
-  const drawOnCanvas2 = (data: { x: number; y: number }) => {
-    ctx2.current?.lineTo(data.x, data.y);
-    ctx2.current?.stroke();
   };
 
   const startDrawing = (event: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef1.current;
     if (canvas) {
+      ctx1.current!.strokeStyle = "black";
+      ctx1.current!.lineWidth = 1;
       ctx1.current?.beginPath();
-      drawOnCanvas1(event.nativeEvent);
-      canvas.addEventListener("mousemove", drawOnCanvas1);
+      drawOnCanvas(event.nativeEvent);
+      canvas.addEventListener("mousemove", drawOnCanvas);
     }
   };
 
   const stopDrawing = () => {
     const canvas = canvasRef1.current;
     if (canvas) {
-      canvas.removeEventListener("mousemove", drawOnCanvas1);
+      canvas.removeEventListener("mousemove", drawOnCanvas);
       ctx1.current?.closePath();
+
+      if (channel.current) {
+        channel.current.postMessage({ isDrawing: false });
+      }
     }
   };
 
-  const resetCanvases = () => {
+  const resetCanvas = () => {
     const canvas1 = canvasRef1.current;
-    const canvas2 = canvasRef2.current;
-    if (ctx1.current && ctx2.current && canvas1 && canvas2) {
+    if (ctx1.current && canvas1) {
       ctx1.current.clearRect(0, 0, canvas1.width, canvas1.height);
-      ctx2.current.clearRect(0, 0, canvas2.width, canvas2.height);
     }
   };
 
@@ -69,15 +83,11 @@ const CanvasComponent: React.FC = () => {
         onMouseLeave={stopDrawing}
       />
       <button
-        onClick={resetCanvases}
+        onClick={resetCanvas}
         className="bg-custom-gradient p-2 rounded-lg hover:animate-pulse hover:text-white"
       >
         Reset
       </button>
-      <canvas
-        ref={canvasRef2}
-        className="border border-gray-500 m-2 bg-white rounded-lg"
-      />
     </div>
   );
 };

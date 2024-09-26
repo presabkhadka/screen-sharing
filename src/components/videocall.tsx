@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 function Videocall() {
   const [peerId, setPeerId] = useState("");
 
-  const selfVideo = useRef<HTMLVideoElement>(null);
   const remoteVideo = useRef<HTMLVideoElement>(null);
   const idInput = useRef<HTMLInputElement>(null);
 
@@ -19,24 +18,11 @@ function Videocall() {
     selfPeer.current = peer;
 
     peer.on("call", (call) => {
-      navigator.mediaDevices
-        .getUserMedia({
-          video: true,
-          audio: true,
-        })
-        .then((selfStream) => {
-          if (selfVideo.current) selfVideo.current.srcObject = selfStream;
+      call.answer();
 
-          call.answer(selfStream);
-
-          call.on("stream", (remoteStream) => {
-            if (remoteVideo.current)
-              remoteVideo.current.srcObject = remoteStream;
-          });
-        })
-        .catch((error) => {
-          console.error("Error accessing media devices.", error);
-        });
+      call.on("stream", (remoteStream) => {
+        if (remoteVideo.current) remoteVideo.current.srcObject = remoteStream;
+      });
     });
   }, []);
 
@@ -53,23 +39,19 @@ function Videocall() {
   };
 
   const handleCall = (id: string) => {
-    if (!id) return alert("Please enter an id");
+    if (!id) return alert("Please enter an ID");
 
     navigator.mediaDevices
-      .getUserMedia({ video: true, audio: true })
-      .then((selfStream) => {
-        if (selfVideo.current) selfVideo.current.srcObject = selfStream;
-
-        const call = selfPeer.current?.call(id, selfStream);
+      .getDisplayMedia({ video: true, audio: true })
+      .then((screenStream) => {
+        const call = selfPeer.current?.call(id, screenStream);
 
         call?.on("stream", (remoteStream) => {
-          console.log(remoteStream);
-
           if (remoteVideo.current) remoteVideo.current.srcObject = remoteStream;
         });
       })
       .catch((error) => {
-        console.error("Error accessing media devices.", error);
+        console.error("Error accessing display media.", error);
       });
   };
 
@@ -78,13 +60,8 @@ function Videocall() {
   };
 
   return (
-    <div className="flex items-center justify-around h-screen gap-5 bg-custom-gradient">
-      <video
-        className="w-1/4 h-fit  rounded-lg"
-        ref={remoteVideo}
-        autoPlay
-        poster="https://upload.wikimedia.org/wikipedia/commons/6/6c/Phone_icon.png"
-      />
+    <div className="flex items-center justify-around h-full gap-5  rounded-lg shadow-lg bg-slate-600">
+      <video className="w-2/3  rounded-lg" ref={remoteVideo} autoPlay />
       <div className="flex flex-col justify-around h-full gap-2 m-4">
         <div className="flex flex-col gap-2 m-4">
           <h4
@@ -114,7 +91,7 @@ function Videocall() {
             onClick={() => handleCall(idInput.current?.value ?? "")}
             className="h-10 text-white bg-green-500 rounded hover:bg-green-600"
           >
-            Call
+            Share Screen
           </button>
           <button
             type="button"
@@ -124,7 +101,6 @@ function Videocall() {
             Hang up
           </button>
         </div>
-        <video className="h-64 m-2 rounded-lg" ref={selfVideo} muted autoPlay />
       </div>
     </div>
   );
