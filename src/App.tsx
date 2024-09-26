@@ -1,10 +1,14 @@
-// src/App.tsx
-import React from "react";
-import CanvasComponent from "../src/components/canvas";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Landing from "./components/landing";
+import Videocall from "./components/videocall";
 
-const App: React.FC = () => {
-  return <Landing />;
-};
-
-export default App;
+export default function App() {
+  return (
+    <RouterProvider
+      router={createBrowserRouter([
+        { path: "/", element: <Landing /> },
+        { path: "/call", element: <Videocall /> },
+      ])}
+    ></RouterProvider>
+  );
+}

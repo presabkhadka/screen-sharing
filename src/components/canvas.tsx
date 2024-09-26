@@ -1,4 +1,3 @@
-// src/CanvasComponent.tsx
 import React, { useRef, useEffect } from "react";
 
 const CanvasComponent: React.FC = () => {
@@ -13,16 +12,10 @@ const CanvasComponent: React.FC = () => {
     if (canvas1 && canvas2) {
       ctx1.current = canvas1.getContext("2d");
       ctx2.current = canvas2.getContext("2d");
-      //   canvas1.width = window.innerWidth / 2;
-      //   canvas1.height = window.innerHeight;
-      //   canvas2.width = window.innerWidth / 2;
-      //   canvas2.height = window.innerHeight;
     }
   }, []);
 
   const sendDrawData = (data: any) => {
-    // Replace with your WebRTC signaling code
-    // For demonstration, we are just calling the draw function directly
     drawOnCanvas2(data);
   };
 
@@ -32,7 +25,6 @@ const CanvasComponent: React.FC = () => {
     ctx1.current?.lineTo(x, y);
     ctx1.current?.stroke();
 
-    // Send draw data to the other canvas
     sendDrawData({ x, y });
   };
 
@@ -71,7 +63,7 @@ const CanvasComponent: React.FC = () => {
     <div className="flex flex-col items-center">
       <canvas
         ref={canvasRef1}
-        className="border border-gray-500 m-2 bg-white"
+        className="border border-gray-500 m-2 bg-white rounded-lg"
         onMouseDown={startDrawing}
         onMouseUp={stopDrawing}
         onMouseLeave={stopDrawing}
@@ -84,7 +76,7 @@ const CanvasComponent: React.FC = () => {
       </button>
       <canvas
         ref={canvasRef2}
-        className="border border-gray-500 m-2 bg-white"
+        className="border border-gray-500 m-2 bg-white rounded-lg"
       />
     </div>
   );
