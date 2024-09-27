@@ -1,1 +1,1 @@
-A simple video call app.
+A simple screen sharing app using broadcast channel api.
