@@ -15,7 +15,7 @@ const CanvasComponent: React.FC = () => {
     if (canvas) {
       ctx.current = canvas.getContext("2d");
       if (ctx.current) {
-        ctx.current.lineWidth = 2;
+        ctx.current.lineWidth = 1;
         ctx.current.strokeStyle = "black";
 
         socket.current.on(
