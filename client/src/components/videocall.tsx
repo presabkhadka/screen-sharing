@@ -55,6 +55,7 @@ function Videocall() {
     navigator.mediaDevices
       .getDisplayMedia({ video: true, audio: true })
       .then((screenStream) => {
+        console.log("Screen share recieved");
         const call = selfPeer.current?.call(id, screenStream);
 
         call?.on("stream", (remoteStream) => {
