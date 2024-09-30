@@ -84,7 +84,7 @@ function Videocall() {
       <div className="flex flex-col justify-around h-full gap-2 m-4">
         <div className="flex flex-col gap-2 m-4">
           <h4
-            className="text-xl font-bold text-center cursor-pointer animate-bounce"
+            className="text-xl font-bold text-center cursor-pointer"
             onClick={handleCopyId}
             onKeyDown={(e) => {
               if (e.key === "Enter") handleCopyId();

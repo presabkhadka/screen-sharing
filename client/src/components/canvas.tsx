@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
 const CanvasComponent: React.FC = () => {
@@ -7,8 +7,9 @@ const CanvasComponent: React.FC = () => {
   const socket = useRef<Socket | null>(null);
   const isDrawing = useRef(false);
   const lastPosition = useRef<{ x: number; y: number } | null>(null);
+  const [isEraser, setIsEraser] = useState(false); // State for eraser
 
-  // Add url provided by cloudflare tunnel here for port 3000
+  // Connect to the socket server
   useEffect(() => {
     socket.current = io("https://belly-cashiers-eh-does.trycloudflare.com", {
       transports: ["websocket"],
@@ -21,12 +22,19 @@ const CanvasComponent: React.FC = () => {
         ctx.current.lineWidth = 1;
         ctx.current.strokeStyle = "black";
 
+        // Listen for draw events from the server
         socket.current.on(
           "draw",
-          (data: { x: number; y: number; isDrawing: boolean }) => {
-            const { x, y, isDrawing } = data;
+          (data: {
+            x: number;
+            y: number;
+            isDrawing: boolean;
+            isEraser: boolean;
+          }) => {
+            const { x, y, isDrawing, isEraser } = data;
 
             if (ctx.current) {
+              ctx.current.strokeStyle = isEraser ? "white" : "black"; // Set color based on eraser state
               if (isDrawing) {
                 if (lastPosition.current) {
                   ctx.current.moveTo(
@@ -60,10 +68,14 @@ const CanvasComponent: React.FC = () => {
     const y = event.clientY - rect.top;
 
     if (ctx.current && isDrawing.current) {
+      ctx.current.lineWidth = isEraser ? 5 : 1;
+      ctx.current.strokeStyle = isEraser ? "white" : "black"; // Use white for eraser
       ctx.current.lineTo(x, y);
       ctx.current.stroke();
       lastPosition.current = { x, y };
-      socket.current?.emit("draw", { x, y, isDrawing: true });
+
+      // Emit drawing data including isEraser state
+      socket.current?.emit("draw", { x, y, isDrawing: true, isEraser });
     }
   };
 
@@ -88,7 +100,7 @@ const CanvasComponent: React.FC = () => {
       isDrawing.current = false;
       canvas.removeEventListener("mousemove", drawOnCanvas);
       ctx.current.closePath();
-      socket.current?.emit("draw", { isDrawing: false });
+      socket.current?.emit("draw", { isDrawing: false, isEraser });
       lastPosition.current = null;
     }
   };
@@ -97,11 +109,30 @@ const CanvasComponent: React.FC = () => {
     const canvas = canvasRef.current;
     if (ctx.current && canvas) {
       ctx.current.clearRect(0, 0, canvas.width, canvas.height);
+      socket.current?.emit("reset"); // Notify others to reset
     }
   };
 
   return (
     <div className="flex flex-col items-center">
+      <div className="flex gap-2">
+        <button
+          onClick={() => setIsEraser(false)}
+          className={`px-4 py-2 rounded-lg text-2xl ${
+            !isEraser ? "bg-blue-500 text-white" : "bg-gray-300"
+          }`}
+        >
+          ✏️
+        </button>
+        <button
+          onClick={() => setIsEraser(true)}
+          className={`py-2 px-4 rounded-lg text-2xl ${
+            isEraser ? "bg-red-500 text-white" : "bg-gray-300"
+          }`}
+        >
+          🧼
+        </button>
+      </div>
       <canvas
         ref={canvasRef}
         className="border border-gray-500 m-2 bg-white rounded-lg"
@@ -113,7 +144,7 @@ const CanvasComponent: React.FC = () => {
       />
       <button
         onClick={resetCanvas}
-        className="bg-custom-gradient p-2 rounded-lg hover:animate-pulse hover:text-white"
+        className="bg-custom-gradient py-2 px-4 rounded-lg hover:text-white"
       >
         Reset
       </button>
