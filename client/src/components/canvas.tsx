@@ -7,9 +7,8 @@ const CanvasComponent: React.FC = () => {
   const socket = useRef<Socket | null>(null);
   const isDrawing = useRef(false);
   const lastPosition = useRef<{ x: number; y: number } | null>(null);
-  const [isEraser, setIsEraser] = useState(false); // State for eraser
+  const [isEraser, setIsEraser] = useState(false);
 
-  // Connect to the socket server
   useEffect(() => {
     socket.current = io("https://belly-cashiers-eh-does.trycloudflare.com", {
       transports: ["websocket"],
@@ -22,7 +21,6 @@ const CanvasComponent: React.FC = () => {
         ctx.current.lineWidth = 1;
         ctx.current.strokeStyle = "black";
 
-        // Listen for draw events from the server
         socket.current.on(
           "draw",
           (data: {
@@ -34,22 +32,28 @@ const CanvasComponent: React.FC = () => {
             const { x, y, isDrawing, isEraser } = data;
 
             if (ctx.current) {
-              ctx.current.strokeStyle = isEraser ? "white" : "black"; // Set color based on eraser state
-              if (isDrawing) {
-                if (lastPosition.current) {
-                  ctx.current.moveTo(
-                    lastPosition.current.x,
-                    lastPosition.current.y
-                  );
-                } else {
-                  ctx.current.moveTo(x, y);
-                }
-                ctx.current.lineTo(x, y);
-                ctx.current.stroke();
-                lastPosition.current = { x, y };
+              if (isEraser) {
+                ctx.current.clearRect(x - 10, y - 10, 20, 20);
               } else {
-                ctx.current.closePath();
-                lastPosition.current = null;
+                ctx.current.strokeStyle = "black";
+                ctx.current.lineWidth = 1;
+
+                if (isDrawing) {
+                  if (lastPosition.current) {
+                    ctx.current.moveTo(
+                      lastPosition.current.x,
+                      lastPosition.current.y
+                    );
+                  } else {
+                    ctx.current.moveTo(x, y);
+                  }
+                  ctx.current.lineTo(x, y);
+                  ctx.current.stroke();
+                  lastPosition.current = { x, y };
+                } else {
+                  ctx.current.closePath();
+                  lastPosition.current = null;
+                }
               }
             }
           }
@@ -68,14 +72,27 @@ const CanvasComponent: React.FC = () => {
     const y = event.clientY - rect.top;
 
     if (ctx.current && isDrawing.current) {
-      ctx.current.lineWidth = isEraser ? 5 : 1;
-      ctx.current.strokeStyle = isEraser ? "white" : "black"; // Use white for eraser
-      ctx.current.lineTo(x, y);
-      ctx.current.stroke();
+      if (isEraser) {
+        ctx.current.clearRect(x - 10, y - 10, 20, 20);
+        socket.current?.emit("draw", {
+          x,
+          y,
+          isDrawing: false,
+          isEraser: true,
+        });
+      } else {
+        ctx.current.lineWidth = 1;
+        ctx.current.strokeStyle = "black";
+        ctx.current.lineTo(x, y);
+        ctx.current.stroke();
+        socket.current?.emit("draw", {
+          x,
+          y,
+          isDrawing: true,
+          isEraser: false,
+        });
+      }
       lastPosition.current = { x, y };
-
-      // Emit drawing data including isEraser state
-      socket.current?.emit("draw", { x, y, isDrawing: true, isEraser });
     }
   };
 
@@ -109,7 +126,7 @@ const CanvasComponent: React.FC = () => {
     const canvas = canvasRef.current;
     if (ctx.current && canvas) {
       ctx.current.clearRect(0, 0, canvas.width, canvas.height);
-      socket.current?.emit("reset"); // Notify others to reset
+      socket.current?.emit("reset");
     }
   };
 
