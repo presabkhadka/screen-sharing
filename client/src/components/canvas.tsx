@@ -9,7 +9,9 @@ const CanvasComponent: React.FC = () => {
   const lastPosition = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    socket.current = io("http://localhost:3000");
+    socket.current = io("http://localhost:3000", {
+      transports: ["websocket"],
+    });
 
     const canvas = canvasRef.current;
     if (canvas) {
