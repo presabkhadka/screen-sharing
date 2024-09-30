@@ -1,5 +1,6 @@
 import CanvasComponent from "./canvas";
 import Videocall from "./videocall";
+import Whiteboard from "./whiteboard";
 
 export default function Landing() {
   return (
@@ -8,7 +9,8 @@ export default function Landing() {
         <Videocall />
       </div>
       <div className="col-span-4 flex flex-col gap-4">
-        <CanvasComponent />
+        {/* <CanvasComponent /> */}
+        <Whiteboard/>
       </div>
     </div>
   );
