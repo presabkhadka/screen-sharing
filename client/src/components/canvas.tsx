@@ -8,10 +8,11 @@ const CanvasComponent: React.FC = () => {
   const isDrawing = useRef(false);
   const lastPosition = useRef<{ x: number; y: number } | null>(null);
 
+  // Add url provided by cloudflare tunnel here for port 3000
   useEffect(() => {
-    socket.current = io("http://localhost:3000", {
+    socket.current = io("https://belly-cashiers-eh-does.trycloudflare.com", {
       transports: ["websocket"],
-    })
+    });
 
     const canvas = canvasRef.current;
     if (canvas) {

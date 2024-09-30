@@ -10,7 +10,8 @@ function Videocall() {
 
   const selfPeer = useRef<Peer>();
 
-  const socket = useRef(io("http://localhost:3000"));
+  // Add url provided by cloudflare tunnel here for port 3000
+  const socket = useRef(io("https://belly-cashiers-eh-does.trycloudflare.com"));
 
   useEffect(() => {
     const peer = new Peer();
