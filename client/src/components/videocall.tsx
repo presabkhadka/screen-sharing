@@ -5,13 +5,17 @@ import { io } from "socket.io-client";
 function Videocall() {
   const [peerId, setPeerId] = useState("");
   const [remotePeerId, setRemotePeerId] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const remoteVideo = useRef<HTMLVideoElement>(null);
   const idInput = useRef<HTMLInputElement>(null);
-
+  const localVideo = useRef<HTMLVideoElement>(null);
   const selfPeer = useRef<Peer>();
 
-  // Add url provided by cloudflare tunnel here for port 3000
-  const socket = useRef(io("https://belly-cashiers-eh-does.trycloudflare.com"));
+  // Add url provided by Cloudflare tunnel here for port 3000
+  const socket = useRef(
+    io("https://wrapped-cellular-edges-tropical.trycloudflare.com")
+  );
 
   useEffect(() => {
     const peer = new Peer();
@@ -19,24 +23,46 @@ function Videocall() {
 
     peer.on("open", (id) => {
       setPeerId(id);
-
       socket.current.emit("register-peer-id", id);
     });
 
-    peer.on("call", (call) => {
-      call.answer();
+    const handleCall = (call: any) => {
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          setVideoStream(localVideo, stream);
+          call.answer(stream);
+          call.on("stream", (remoteStream: any) => {
+            setVideoStream(remoteVideo, remoteStream);
+          });
+        })
+        .catch((error) => {
+          setError(
+            "Error accessing media devices. Please check your permissions."
+          );
+          console.error("Error accessing media devices.", error);
+        });
+    };
 
-      call.on("stream", (remoteStream) => {
-        if (remoteVideo.current) {
-          remoteVideo.current.srcObject = remoteStream;
-        }
-      });
-    });
+    peer.on("call", handleCall);
 
-    socket.current.on("peer-id", (id) => {
+    const handlePeerId = (id: any) => {
       setRemotePeerId(id);
-    });
+    };
+
+    socket.current.on("peer-id", handlePeerId);
+
+    return () => {
+      socket.current.off("peer-id", handlePeerId);
+      peer.destroy();
+    };
   }, []);
+
+  const setVideoStream = (videoRef: any, stream: any) => {
+    if (videoRef.current && videoRef.current.srcObject !== stream) {
+      videoRef.current.srcObject = stream;
+    }
+  };
 
   const handleCopyId = () => {
     navigator.clipboard.writeText(peerId);
@@ -50,20 +76,30 @@ function Videocall() {
     });
   };
 
-  const handleCall = (id: string) => {
+  const handleCall = (id: any) => {
     if (!id) return alert("Please enter an ID");
 
+    setLoading(true);
     navigator.mediaDevices
-      .getDisplayMedia({ video: true, audio: true })
-      .then((screenStream) => {
-        console.log("Screen share recieved");
-        const call = selfPeer.current?.call(id, screenStream);
+      .getUserMedia({ video: true, audio: true })
+      .then((stream) => {
+        setLoading(false);
+        console.log("Screen share received");
+        setVideoStream(localVideo, stream);
 
+        const call = selfPeer.current?.call(id, stream);
         call?.on("stream", (remoteStream) => {
-          if (remoteVideo.current) remoteVideo.current.srcObject = remoteStream;
+          // Only set remote stream if there is a valid remote peer
+          if (remotePeerId) {
+            setVideoStream(remoteVideo, remoteStream);
+          }
         });
       })
       .catch((error) => {
+        setLoading(false);
+        setError(
+          "Error accessing media devices. Please check your permissions."
+        );
         console.error("Error accessing display media.", error);
       });
   };
@@ -79,12 +115,25 @@ function Videocall() {
   };
 
   return (
-    <div className="flex items-center justify-around h-full gap-5 rounded-lg shadow-lg bg-slate-600">
-      <video className="w-2/3 rounded-lg" ref={remoteVideo} autoPlay />
-      <div className="flex flex-col justify-around h-full gap-2 m-4">
-        <div className="flex flex-col gap-2 m-4">
+    <div className="flex flex-col justify-around h-screen gap-5 bg-slate-600">
+      <div className="flex gap-4">
+        <div className="flex flex-col gap-4">
+          <video className="rounded-lg" ref={localVideo} autoPlay muted/>
+        </div>
+        <div className="flex flex-col gap-4">
+          {remotePeerId && (
+            <video className="rounded-lg" ref={remoteVideo} autoPlay />
+          )}
+        </div>
+      </div>
+      {error && <div className="text-red-500">{error}</div>}
+      {loading && (
+        <div className="text-yellow-500">Accessing media devices...</div>
+      )}
+      <div className="flex flex-col justify-around">
+        <div className="flex flex-col gap-2">
           <h4
-            className="text-xl font-bold text-center cursor-pointer"
+            className="text-xl font-bold cursor-pointer"
             onClick={handleCopyId}
             onKeyDown={(e) => {
               if (e.key === "Enter") handleCopyId();
@@ -95,30 +144,33 @@ function Videocall() {
               {peerId}
             </span>
           </h4>
-          <label htmlFor="idInput" className="text-slate-500">
-            Receiver ID
-          </label>
+
           <input
             ref={idInput}
             id="idInput"
             type="text"
             onClick={handlePasteId}
-            className="h-10 leading-10 border border-gray-500 rounded focus:outline-none "
+            className="border border-gray-500 rounded focus:outline-none p-2 w-fit"
+            placeholder="Enter receiver ID here"
           />
-          <button
-            type="button"
-            onClick={() => handleCall(idInput.current?.value ?? "")}
-            className="h-10 text-white bg-green-500 rounded hover:bg-green-600"
-          >
-            Share Screen
-          </button>
-          <button
-            type="button"
-            className="h-10 text-white bg-red-500 rounded hover:bg-red-600"
-            onClick={handleHangup}
-          >
-            Hang up
-          </button>
+          <div className="flex justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleCall(idInput.current?.value ?? "")}
+              className="text-white bg-green-500 rounded-full h-16 w-16 hover:bg-green-600"
+              aria-label="Call"
+            >
+              📞
+            </button>
+            <button
+              type="button"
+              className="text-3xl bg-red-500 rounded-full h-16 w-16 hover:bg-red-600"
+              onClick={handleHangup}
+              aria-label="Hang up"
+            >
+              📵
+            </button>
+          </div>
         </div>
       </div>
     </div>
