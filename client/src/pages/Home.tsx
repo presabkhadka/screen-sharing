@@ -1,9 +1,9 @@
-import { Join } from "./components/CreateButton";
+import { Join } from "../components/CreateButton";
 
-export default function App() {
+export const Home = () => {
   return (
     <div className="h-screen w-screen flex justify-center items-center">
       <Join />
     </div>
   );
-}
+};
