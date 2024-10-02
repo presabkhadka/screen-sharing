@@ -5,6 +5,7 @@ import { VideoPlayer } from "../components/VideoPlayer";
 import { ShareScreenButton } from "../components/ShareScreenButton";
 import { ChatButton } from "../components/ChatButton";
 import { Chat } from "../components/chat/Chat";
+import { PeerState } from "../reducers/peerReducer";
 
 export const Room = () => {
   const { id } = useParams();
@@ -52,7 +53,7 @@ export const Room = () => {
       </div>
       <div className="h-24 fixed bottom-0 p-4 w-full flex justify-center items-center border-t-2 bg-white gap-2">
         <ShareScreenButton onClick={shareScreen} />
-        <ChatButton/>
+        {/* <ChatButton/> */}
       </div>
     </div>
   );

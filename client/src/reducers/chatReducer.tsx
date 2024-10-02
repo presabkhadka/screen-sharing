@@ -2,7 +2,8 @@ import { IMessage } from "../type/chat";
 import { ADD_MESSAGE, ADD_HISTORY } from "./chatActions";
 
 export type ChatState = {
-    messages: IMessage[]
+    messages: IMessage[];
+    isChatOpen: boolean;
 };
 type ChatAction =
   | {

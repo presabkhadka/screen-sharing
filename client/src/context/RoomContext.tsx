@@ -8,20 +8,20 @@ import { PeersReducer } from "../reducers/peerReducer";
 import { chatReducer } from "../reducers/chatReducer";
 import { addPeerAction, removePeerAction } from "../reducers/peerActions";
 import { IMessage } from "../type/chat";
-import { log } from "console";
 import { addMessageAction, addHistoryAction } from "../reducers/chatActions";
 
 export const RoomContext = createContext<null | any>(null);
 
 const ws = socketIOClient(WS);
 
-export const RoomProvider: React.FC = ({ children }) => {
+export const RoomProvider: React.FC = ({ children}) => {
   const navigate = useNavigate();
   const [me, setMe] = useState<Peer>();
   const [stream, setStream] = useState<MediaStream>();
   const [peers, dispatch] = useReducer(PeersReducer, {});
   const [chat, chatDispatch] = useReducer(chatReducer, {
     messages: [],
+    isChatOpen: false,
   });
   const [screenSharingId, setScreenSharingId] = useState<string>("");
   const [roomId, setRoomId] = useState<string>();
@@ -68,6 +68,8 @@ export const RoomProvider: React.FC = ({ children }) => {
       author: me?.id,
       timestamp: new Date().getTime(),
     };
+    chatDispatch(addMessageAction(messageData));
+
 
     ws.emit("send-message", roomId, messageData);
   };
