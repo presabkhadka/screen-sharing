@@ -9,7 +9,7 @@ export const Join: React.FC = () => {
   return (
     <button
       onClick={createRoom}
-      className="bg-rose-400 px-4 py-2 rounded-lg text-xl text-white hover:bg-rose-600"
+      className="bg-blue-400 px-4 py-2 rounded-lg text-xl text-white hover:bg-blue-600"
     >
       Start new meeting
     </button>
