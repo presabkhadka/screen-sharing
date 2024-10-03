@@ -23,7 +23,8 @@ export const RoomHandler = (socket: Socket) => {
   };
   const joinRoom = ({ roomId, peerId }: RoomParams) => {
     if (!rooms[roomId]) rooms[roomId] = [];
-    socket.emit("get-messages", chats[roomId])
+    if (!chats[roomId]) chats[roomId] = [];
+    socket.emit("get-messages", chats[roomId]);
     console.log("user joined the room", roomId, peerId);
     rooms[roomId].push(peerId);
     socket.join(roomId);
@@ -53,7 +54,7 @@ export const RoomHandler = (socket: Socket) => {
   };
 
   const addMessage = (roomId: string, message: IMessage) => {
-    console.log(message);
+    console.log({ message });
     if (chats[roomId]) {
       chats[roomId].push(message);
     } else {

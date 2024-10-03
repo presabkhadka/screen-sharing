@@ -9,8 +9,17 @@ import { PeerState } from "../reducers/peerReducer";
 
 export const Room = () => {
   const { id } = useParams();
-  const { ws, me, stream, peers, shareScreen, screenSharingId, setRoomId } =
-    useContext(RoomContext);
+  const {
+    ws,
+    me,
+    stream,
+    peers,
+    shareScreen,
+    screenSharingId,
+    setRoomId,
+    toggleChat,
+    chat,
+  } = useContext(RoomContext);
 
   useEffect(() => {
     if (me) ws.emit("join-room", { roomId: id, peerId: me._id });
@@ -47,13 +56,15 @@ export const Room = () => {
             <VideoPlayer stream={peer.stream} />
           ))}
         </div>
-        <div className="border-l-2 pb-24">
-        <Chat/>   
-        </div>
+        {chat.isChatOpen && (
+          <div className="border-l-2 pb-24">
+            <Chat />
+          </div>
+        )}
       </div>
       <div className="h-24 fixed bottom-0 p-4 w-full flex justify-center items-center border-t-2 bg-white gap-2">
         <ShareScreenButton onClick={shareScreen} />
-        {/* <ChatButton/> */}
+        <ChatButton onClick={toggleChat} />
       </div>
     </div>
   );

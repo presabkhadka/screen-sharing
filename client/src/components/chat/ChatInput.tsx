@@ -15,7 +15,7 @@ export const ChatInput: React.FC = () => {
           <textarea
             onChange={(e) => setMessage(e.target.value)}
             value={message}
-            className="border rounded"
+            className="border rounded p-2 resize-none mx-2"
           />
           <button
             type="submit"

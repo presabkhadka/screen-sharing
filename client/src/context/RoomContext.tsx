@@ -8,13 +8,17 @@ import { PeersReducer } from "../reducers/peerReducer";
 import { chatReducer } from "../reducers/chatReducer";
 import { addPeerAction, removePeerAction } from "../reducers/peerActions";
 import { IMessage } from "../type/chat";
-import { addMessageAction, addHistoryAction } from "../reducers/chatActions";
+import {
+  addMessageAction,
+  addHistoryAction,
+  toggleChatAction,
+} from "../reducers/chatActions";
 
 export const RoomContext = createContext<null | any>(null);
 
 const ws = socketIOClient(WS);
 
-export const RoomProvider: React.FC = ({ children}) => {
+export const RoomProvider: React.FC = ({ children }) => {
   const navigate = useNavigate();
   const [me, setMe] = useState<Peer>();
   const [stream, setStream] = useState<MediaStream>();
@@ -70,7 +74,6 @@ export const RoomProvider: React.FC = ({ children}) => {
     };
     chatDispatch(addMessageAction(messageData));
 
-
     ws.emit("send-message", roomId, messageData);
   };
 
@@ -81,6 +84,10 @@ export const RoomProvider: React.FC = ({ children}) => {
 
   const addHistory = (messages: IMessage[]) => {
     chatDispatch(addHistoryAction(messages));
+  };
+
+  const toggleChat = () => {
+    chatDispatch(toggleChatAction(!chat.isChatOpen));
   };
 
   useEffect(() => {
@@ -106,7 +113,7 @@ export const RoomProvider: React.FC = ({ children}) => {
     ws.on("add-message", addMessage);
     ws.on("get-messages", addHistory);
 
-    // cleanup function
+    // cleanup function for usestate
     return () => {
       ws.off("room-created");
       ws.off("get-users");
@@ -157,6 +164,7 @@ export const RoomProvider: React.FC = ({ children}) => {
         shareScreen,
         screenSharingId,
         setRoomId,
+        toggleChat,
         sendMessage,
       }}
     >

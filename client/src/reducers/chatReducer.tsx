@@ -19,20 +19,31 @@ type ChatAction =
       payload: { isOpen: boolean };
     };
 
-export const chatReducer = (state: ChatState, action: ChatAction) => {
+export const chatReducer = (
+  state: ChatState = { messages: [], isChatOpen: false },
+  action: ChatAction
+) => {
   switch (action.type) {
     case ADD_MESSAGE:
       return {
         ...state,
-       messages: [...state.messages, action.payload.message]
+        messages: Array.isArray(state.messages)
+          ? [...state.messages, action.payload.message]
+          : [action.payload.message], // Ensure messages is an array
       };
     case ADD_HISTORY:
       return {
-       ...state,
-        messages: action.payload.history,
-      }
-
+        ...state,
+        messages: Array.isArray(action.payload.history)
+          ? action.payload.history
+          : [], // Ensure history is an array
+      };
+    case TOGGLE_CHAT:
+      return {
+        ...state,
+        isChatOpen: action.payload.isOpen,
+      };
     default:
-      return { ...state };
+      return state;
   }
 };
