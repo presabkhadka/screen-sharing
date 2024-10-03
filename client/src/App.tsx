@@ -1,14 +1,9 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Landing from "./components/landing";
-import Videocall from "./components/videocall";
+import { Join } from "./components/CreateButton";
 
 export default function App() {
   return (
-    <RouterProvider
-      router={createBrowserRouter([
-        { path: "/", element: <Landing /> },
-        { path: "/videocall", element: <Videocall /> },
-      ])}
-    ></RouterProvider>
+    <div className="h-screen w-screen flex justify-center items-center">
+      <Join />
+    </div>
   );
 }

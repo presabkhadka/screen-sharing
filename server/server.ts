@@ -1,55 +1,28 @@
 import express from "express";
-import { createServer } from "http";
+import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
+import { RoomHandler } from "./room/roomHandler";
 
 const port = 3000;
-
 const app = express();
-const server = createServer(app);
-
+const server = http.createServer(app);
+app.use(cors());
 const io = new Server(server, {
   cors: {
     origin: "*",
-    credentials: true,
+    methods: ["GET", "POST"],
   },
 });
 
-app.use(
-  cors({
-    origin: "*",
-    credentials: true,
-  })
-);
-
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
-
-interface DrawData {
-  x: number;
-  y: number;
-  isDrawing: boolean;
-}
-
 io.on("connection", (socket) => {
-  console.log("User Connected");
-  console.log("Socket ID:", socket.id);
-
-  socket.on("register-peer-id", (peerId) => {
-    console.log("Peer ID registered:", peerId);
-    socket.broadcast.emit("peer-id", peerId);
-  });
-
-  socket.on("draw", (data: DrawData) => {
-    socket.broadcast.emit("draw", data);
-  });
-
+  console.log("User connected to socket.");
+  RoomHandler(socket)
   socket.on("disconnect", () => {
-    console.log("User Disconnected:", socket.id);
+    console.log("User disconnected from socket.");
   });
 });
 
 server.listen(port, () => {
-  console.log(`Server is running on ${port}`);
+  console.log(`Listening on port, ${port}`);
 });

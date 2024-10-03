@@ -1,1 +1,1 @@
-Screen shairng app with canvas using webrtc, peerjs and socket.io for real time collaboration.
+Team collaboration app made using React, TypeScript, PeerJS, and Web sockets.
