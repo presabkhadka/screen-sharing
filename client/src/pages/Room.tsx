@@ -6,12 +6,14 @@ import { ShareScreenButton } from "../components/ShareScreenButton";
 import { ChatButton } from "../components/ChatButton";
 import { Chat } from "../components/chat/Chat";
 import { PeerState } from "../reducers/peerReducer";
+import { NameInput } from "../common/Name";
 
 export const Room = () => {
   const { id } = useParams();
   const {
     ws,
     me,
+    userName,
     stream,
     peers,
     shareScreen,
@@ -22,8 +24,9 @@ export const Room = () => {
   } = useContext(RoomContext);
 
   useEffect(() => {
-    if (me) ws.emit("join-room", { roomId: id, peerId: me._id });
-  }, [id, me, ws]);
+    if (me && stream)
+      ws.emit("join-room", { roomId: id, peerId: me._id, userName });
+  }, [id, me, ws, stream]);
 
   useEffect(() => {
     setRoomId(id);
@@ -50,14 +53,25 @@ export const Room = () => {
             screenSharingVideo ? "w-1/5 grid-cols-1" : "grid-cols-4"
           }`}
         >
-          {screenSharingId !== me?.id && <VideoPlayer stream={stream} />}
+          {screenSharingId !== me?.id && (
+            <div>
+              <VideoPlayer stream={stream} />
+              {/* name change garne bhaye */}
+              {/* <NameInput /> */}
+            </div>
+          )}
 
-          {Object.values(peersToShow as PeerState).map((peer) => (
-            <VideoPlayer stream={peer.stream} />
-          ))}
+          {Object.values(peersToShow as PeerState)
+            .filter((peer) => !!peer.stream)
+            .map((peer) => (
+              <div>
+                <VideoPlayer stream={peer.stream} />
+                <div>{peer.userName}</div>
+              </div>
+            ))}
         </div>
         {chat.isChatOpen && (
-          <div className="border-l-2 pb-24">
+          <div className="border-l-2 pb-24 ">
             <Chat />
           </div>
         )}
